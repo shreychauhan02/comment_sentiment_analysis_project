@@ -26,11 +26,15 @@ VECTORIZER_NAME = "sentiment_analysis-vectorizer"
 
 LABELS = {0: "NEGATIVE", 1: "NEUTRAL", 2: "POSITIVE"}
 
-dagshub_token = os.getenv("DAGSHUB_PAT")
+dagshub_token = os.getenv("DAGSHUB_USER_TOKEN") or os.getenv("DAGSHUB_PAT")
+if dagshub_token:
+    # The dagshub SDK only reads this exact env var name — set it so it never
+    # falls back to the interactive OAuth flow (impossible on a headless server).
+    os.environ["DAGSHUB_USER_TOKEN"] = dagshub_token
 if not dagshub_token:
     raise EnvironmentError(
-        "DAGSHUB_PAT is not set. Add DAGSHUB_PAT=<your token> to "
-        f"{PROJECT_ROOT / '.env'} and restart the server."
+        "DAGSHUB_USER_TOKEN is not set. Add DAGSHUB_USER_TOKEN=<your token> to "
+        f"{PROJECT_ROOT / '.env'} (or the platform env vars) and restart the server."
     )
 
 youtube_api_key = os.getenv("YOUTUBE_API_KEY")
