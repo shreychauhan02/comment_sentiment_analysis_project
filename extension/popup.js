@@ -1,5 +1,8 @@
-const API_URL = "http://127.0.0.1:8000";
+// const API_URL = "http://127.0.0.1:8000";
+const API_BASE = "https://comment-sentiment-analysis-project.onrender.com";
 
+// // Phir aise use karo
+// fetch(`${API_BASE}/your-api-route`)
 let allComments = [];
 let activeFilter = "ALL";
 let visibleCount = 25;

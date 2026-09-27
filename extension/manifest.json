@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Analyzes YouTube comment sentiment using the team's LightGBM model via a local FastAPI backend.",
   "permissions": ["tabs", "activeTab"],
-  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*", "https://*.onrender.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Comment Sentiment"
