@@ -2,7 +2,6 @@ import os
 import re
 from pathlib import Path
 
-import dagshub
 import joblib
 import mlflow
 import numpy as np
@@ -27,15 +26,20 @@ VECTORIZER_NAME = "sentiment_analysis-vectorizer"
 LABELS = {0: "NEGATIVE", 1: "NEUTRAL", 2: "POSITIVE"}
 
 dagshub_token = os.getenv("DAGSHUB_USER_TOKEN") or os.getenv("DAGSHUB_PAT")
-if dagshub_token:
-    # The dagshub SDK only reads this exact env var name — set it so it never
-    # falls back to the interactive OAuth flow (impossible on a headless server).
-    os.environ["DAGSHUB_USER_TOKEN"] = dagshub_token
 if not dagshub_token:
     raise EnvironmentError(
         "DAGSHUB_USER_TOKEN is not set. Add DAGSHUB_USER_TOKEN=<your token> to "
         f"{PROJECT_ROOT / '.env'} (or the platform env vars) and restart the server."
     )
+# The dagshub SDK reads DAGSHUB_USER_TOKEN once, at import time — so the env var
+# must be set BEFORE "import dagshub", or it falls back to interactive OAuth
+# (impossible on a headless server like Render).
+os.environ["DAGSHUB_USER_TOKEN"] = dagshub_token
+
+import dagshub
+from dagshub.common import config as _dagshub_config
+
+_dagshub_config.token = dagshub_token
 
 youtube_api_key = os.getenv("YOUTUBE_API_KEY")
 if not youtube_api_key:
