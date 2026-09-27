@@ -1,0 +1,76 @@
+stages:
+  data_ingestion:
+    cmd: python -m src.data.data_ingestion
+    deps:
+    - src/data/data_ingestion.py
+    - src/data/utils.py
+    params:
+    - data_ingestion.test_size
+    - data_ingestion.random_state
+    outs:
+    - data/raw
+
+  data_preprocessing:
+    cmd: python -m src.data.data_preprocessing
+    deps:
+    - data/raw/train.csv
+    - data/raw/test.csv
+    - src/data/data_preprocessing.py
+    - src/data/utils.py
+    outs:
+    - data/interim
+
+  feature_extraction:
+    cmd: python -m src.data.feature_extraction
+    deps:
+    - data/interim/train_processed.csv
+    - src/data/feature_extraction.py
+    - src/data/utils.py
+    params:
+    - feature_extraction.max_features
+    - feature_extraction.ngram_range
+    outs:
+    - data/processed
+    - models/tfidf_vectorizer.joblib
+
+  model_building:
+    cmd: python -m src.model.model_building
+    deps:
+    - data/processed
+    - src/model/model_building.py
+    - src/data/utils.py
+    params:
+    - model_building.random_state
+    - model_building.n_estimators
+    - model_building.max_depth
+    - model_building.learning_rate
+    - model_building.num_leaves
+    - model_building.min_child_samples
+    - model_building.subsample
+    - model_building.colsample_bytree
+    - model_building.reg_alpha
+    - model_building.reg_lambda
+    - model_building.objective
+    - model_building.num_class
+    - model_building.class_weight
+    outs:
+    - models/lgbm_model.joblib
+
+  model_evaluation:
+    cmd: python -m src.model.model_evaluation
+    deps:
+    - models/lgbm_model.joblib
+    - models/tfidf_vectorizer.joblib
+    - data/interim/test_processed.csv
+    - src/model/model_evaluation.py
+    - src/data/utils.py
+    outs:
+    - data/visualizations/confusion_matrix_Test_Data.png
+    - experiment_info.json
+
+  model_registration:
+    cmd: python -m src.data.register_model
+    deps:
+    - src/data/register_model.py
+    - src/data/utils.py
+    - experiment_info.json

@@ -1,0 +1,6 @@
+[core]
+    remote = dagshub
+['remote "myremote"']
+    url = D:\dvc-storage
+['remote "dagshub"']
+    url = https://dagshub.com/shreychauhan02/my_final_project.dvc

@@ -1,0 +1,69 @@
+name: CICD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+jobs:
+  model-pipeline:
+    runs-on: ubuntu-latest
+
+    env:
+      DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Configure DVC remote credentials (Dagshub storage)
+        run: |
+          dvc remote modify dagshub user "${{ github.actor }}" --local
+          dvc remote modify dagshub password "$DAGSHUB_PAT" --local
+
+      - name: Run DVC pipeline (train, evaluate, register on Dagshub MLflow)
+        run: dvc repro
+
+      - name: Push DVC-tracked data to Dagshub storage
+        run: dvc push
+
+      - name: Train spam model (not DVC-tracked)
+        run: python fastapi-backend/train_spam_model.py
+
+      - name: Model loading test
+        run: pytest scripts/test_load_model.py -v
+
+      - name: Model signature test
+        run: pytest scripts/test_model_signature.py -v
+
+      - name: Model performance test
+        run: pytest scripts/test_model_performance.py -v
+
+      - name: Commit and push pipeline updates (dvc.lock, experiment_info.json)
+        if: ${{ github.actor != 'github-actions[bot]' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dvc.lock experiment_info.json
+          git diff --staged --quiet || git commit -m "ci: update dvc.lock and experiment info [skip ci]"
+          git push origin HEAD:${{ github.ref_name }}
+          git push https://x-access-token:${DAGSHUB_PAT}@dagshub.com/shreychauhan02/my_final_project.git HEAD:${{ github.ref_name }}
